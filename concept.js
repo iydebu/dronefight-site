@@ -203,6 +203,7 @@ function frame(now) {
     S.camLift += ((S._lift || 0) - S.camLift) * w; S.camBack += ((S._back || 0) - S.camBack) * w; S.lookDY += ((S._dy || 0) - S.lookDY) * w;
     if (portrait() && T >= INTRO_END - 1.2) phoneDrive(T, frozen ? 0 : dt);
     if (!frozen) G.step(dt, T);
+    if (!frozen && T > INTRO_END) G.quality(dt);
     G.apply(T, frozen ? 0 : dt);
     if (SND.on) SND.rpm(S.rpm);
     if (!frozen) for (let i = 0; i < 6; i++) { const on = 1.05 + i * .11; if (prevT < on && T >= on) SND.clunk(); }
@@ -220,7 +221,7 @@ window.CONCEPT = {
   go(sel) { const el = typeof sel === 'number' ? secs[sel] : $(sel); el.scrollIntoView({ behavior: 'instant', block: 'center' }); onScroll(); },
   setColor,
   info: () => ({ T, spot, side: document.body.dataset.side, ready: document.body.classList.contains('ready'), gl: !!G, gpu: G && G.gpu,
-    drone: G && G.S.pos.toArray().map(v => +v.toFixed(2)), yaw: G && +G.S.yaw.toFixed(2), portrait: portrait(), sections: secs.length }),
+    drone: G && G.S.pos.toArray().map(v => +v.toFixed(2)), yaw: G && +G.S.yaw.toFixed(2), portrait: portrait(), sections: secs.length, dpr: G && G.dpr(), fps: G && G.fps }),
   roll: () => G && G.roll(),
   // test: run the phone flight sim (no rendering) for `sec` seconds at the current scroll; returns how far it moved
   probe(sec = 3) {

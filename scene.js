@@ -69,7 +69,7 @@ export const SND = {
 /* ------------------------------------------------------------------ 3D hangar + drone */
 export function buildScene(canvas) {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(Math.min(devicePixelRatio, TOUCH || innerWidth < 760 ? 1.25 : 2));   // phones: bloom + fill rate are the cost
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));   // phones too: 1.25 looked blurry on 3x screens; quality() steps down if slow
   renderer.setSize(innerWidth, innerHeight, false);
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
 
@@ -168,7 +168,7 @@ export function buildScene(canvas) {
   add(new RoundedBoxGeometry(.56, .14, .76, 3, .06), mid, 0, .14, -.05);
   add(new THREE.BoxGeometry(.05, .022, .64), tint(3.2), 0, .218, -.05);
   add(new THREE.SphereGeometry(.125, 24, 16), dark, 0, -.03, .6);
-  const lens = add(new THREE.CylinderGeometry(.062, .062, .04, 24), new THREE.MeshStandardMaterial({ color: 0x05060a, emissive: 0x3a4766, emissiveIntensity: 1.2, metalness: 1, roughness: .1 }), 0, -.03, .715);
+  const lens = add(new THREE.CylinderGeometry(.062, .062, .04, 40), new THREE.MeshStandardMaterial({ color: 0x05060a, emissive: 0x3a4766, emissiveIntensity: 1.2, metalness: 1, roughness: .1 }), 0, -.03, .715);
   lens.rotation.x = Math.PI / 2;
   for (const x of [-.27, .27]) {
     add(new THREE.BoxGeometry(.035, .035, .92), mid, x, -.27, 0);
@@ -184,23 +184,25 @@ export function buildScene(canvas) {
   for (const [sx, sz] of [[1, 1], [-1, 1], [1, -1], [-1, -1]]) {
     const dir = new THREE.Vector3(sx, 0, sz).normalize(), tip = dir.clone().multiplyScalar(1.02);
     const arm = add(new THREE.BoxGeometry(.1, .055, 1.0), carbon); arm.position.copy(dir.clone().multiplyScalar(.55)); arm.rotation.y = Math.atan2(sx, sz);
-    add(new THREE.CylinderGeometry(.085, .1, .13, 20), mid, tip.x, .05, tip.z);
-    add(new THREE.CylinderGeometry(.07, .07, .04, 20), dark, tip.x, .135, tip.z);
-    const duct = add(new THREE.TorusGeometry(.5, .024, 8, 56), dark, tip.x, .13, tip.z); duct.rotation.x = Math.PI / 2;
-    const led = add(new THREE.TorusGeometry(.5, .008, 6, 64), sz > 0 ? tint(3.4) : whiteLed, tip.x, .1, tip.z); led.rotation.x = Math.PI / 2;
+    add(new THREE.CylinderGeometry(.085, .1, .13, 40), mid, tip.x, .05, tip.z);
+    add(new THREE.CylinderGeometry(.07, .07, .04, 40), dark, tip.x, .135, tip.z);
+    const duct = add(new THREE.TorusGeometry(.5, .024, 16, 128), dark, tip.x, .13, tip.z); duct.rotation.x = Math.PI / 2;
+    const led = add(new THREE.TorusGeometry(.5, .008, 10, 128), sz > 0 ? tint(3.4) : whiteLed, tip.x, .1, tip.z); led.rotation.x = Math.PI / 2;
     const rotor = new THREE.Group(); rotor.position.set(tip.x, .155, tip.z); tilt.add(rotor);
     for (let b = 0; b < 3; b++) {
       const h = new THREE.Group(); h.rotation.y = b * Math.PI * 2 / 3;
       const bl = new THREE.Mesh(new THREE.BoxGeometry(.43, .008, .075), bladeMat); bl.position.x = .23; bl.rotation.x = .2;
       h.add(bl); rotor.add(h);
     }
-    const disc = add(new THREE.CircleGeometry(.46, 48), new THREE.MeshBasicMaterial({ color: 0x9aa3b5, transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide }), tip.x, .158, tip.z);
+    const disc = add(new THREE.CircleGeometry(.46, 96), new THREE.MeshBasicMaterial({ color: 0x9aa3b5, transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide }), tip.x, .158, tip.z);
     disc.rotation.x = -Math.PI / 2;
     rotors.push({ g: rotor, disc, spin: sx * sz > 0 ? 1 : -1 });
   }
 
   // post
-  const composer = new EffectComposer(renderer);
+  // own render target with 4x MSAA: the composer's default buffer has no antialiasing (jagged rotors / LED rings)
+  const rt = new THREE.WebGLRenderTarget(innerWidth * renderer.getPixelRatio(), innerHeight * renderer.getPixelRatio(), { type: THREE.HalfFloatType, samples: 4 });
+  const composer = new EffectComposer(renderer, rt);
   composer.addPass(new RenderPass(scene, camera));
   const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth / 2, innerHeight / 2), .6, .5, .82);
   composer.addPass(bloom);
@@ -296,7 +298,16 @@ export function buildScene(canvas) {
   }
   function resize() {
     camera.aspect = innerWidth / innerHeight; camera.fov = camera.aspect < 1 ? 60 : 34; camera.updateProjectionMatrix();
-    renderer.setSize(innerWidth, innerHeight, false); composer.setSize(innerWidth, innerHeight);
+    renderer.setSize(innerWidth, innerHeight, false); composer.setPixelRatio(renderer.getPixelRatio()); composer.setSize(innerWidth, innerHeight);
+  }
+  // phones: if the first ~2 s after the intro run under 40 fps, drop to 1.5x so slow phones stay smooth
+  const fps = { n: 0, t: 0, done: !TOUCH };
+  function quality(dt) {
+    if (fps.done || !(dt > 0)) return;
+    fps.n++; fps.t += dt;
+    if (fps.t < 2) return;
+    fps.done = true; fps.rate = fps.n / fps.t;
+    if (fps.rate < 40 && renderer.getPixelRatio() > 1.5) { renderer.setPixelRatio(1.5); resize(); fps.dropped = true; }
   }
   const drag = { on: false, x: 0 };
   canvas.addEventListener('pointerdown', e => { drag.on = true; drag.x = e.clientX; canvas.classList.add('drag'); canvas.setPointerCapture(e.pointerId); });
@@ -308,7 +319,7 @@ export function buildScene(canvas) {
   drawPad();
   document.fonts.ready.then(drawPad);
   const gl = renderer.getContext(), dbg = gl.getExtension('WEBGL_debug_renderer_info');
-  return { step, apply, simulateTo, setColor, resize, S, kick: d => { S.vel.x += d * 3.2; S.vel.y += .6; },
+  return { step, apply, simulateTo, setColor, resize, quality, fps, dpr: () => renderer.getPixelRatio(), S, kick: d => { S.vel.x += d * 3.2; S.vel.y += .6; },
     roll: () => { if (!S.barrelV) { S.barrelV = Math.PI * 2 / .55; S.vel.y += 2.2; S.flash = 1; } },
     gpu: dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : 'unknown' };
 }
