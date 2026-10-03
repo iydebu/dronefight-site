@@ -14,6 +14,7 @@ export const span = (t, a, b) => clamp((t - a) / (b - a), 0, 1);
 export const ease = t => 1 - Math.pow(1 - clamp(t, 0, 1), 3);
 export const easeIO = t => { t = clamp(t, 0, 1); return t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; };
 export const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+export const TOUCH = matchMedia('(hover: none) and (pointer: coarse)').matches;
 export const COLORS = [['Volt', '#d4ff3a'], ['Signal', '#ff6a1a'], ['Ice', '#46d5ff'], ['Rose', '#ff3d6e']];
 
 export const SND = {
@@ -68,7 +69,7 @@ export const SND = {
 /* ------------------------------------------------------------------ 3D hangar + drone */
 export function buildScene(canvas) {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(Math.min(devicePixelRatio, innerWidth < 760 ? 1.5 : 2));
+  renderer.setPixelRatio(Math.min(devicePixelRatio, TOUCH || innerWidth < 760 ? 1.25 : 2));   // phones: bloom + fill rate are the cost
   renderer.setSize(innerWidth, innerHeight, false);
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
 
@@ -143,7 +144,7 @@ export function buildScene(canvas) {
   }
 
   // dust
-  const N = 520, dp = new Float32Array(N * 3);
+  const N = TOUCH ? 200 : 520, dp = new Float32Array(N * 3);
   for (let i = 0; i < N; i++) { dp[i * 3] = (Math.random() - .5) * 16; dp[i * 3 + 1] = Math.random() * 6; dp[i * 3 + 2] = Math.random() * 12 - 8; }
   const dustGeo = new THREE.BufferGeometry(); dustGeo.setAttribute('position', new THREE.BufferAttribute(dp, 3));
   const dustMat = new THREE.PointsMaterial({ color: 0xb8c0d0, size: .022, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
@@ -203,6 +204,7 @@ export function buildScene(canvas) {
   composer.addPass(new RenderPass(scene, camera));
   const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth / 2, innerHeight / 2), .6, .5, .82);
   composer.addPass(bloom);
+  if (TOUCH) { const bs = bloom.setSize.bind(bloom); bloom.setSize = (w, h) => bs(w / 2, h / 2); bloom.setSize(innerWidth, innerHeight); }   // half-res glow on phones
   composer.addPass(new OutputPass());
 
   /* ---- sim: spring-driven hover, body tilts with acceleration ---- */
@@ -210,7 +212,8 @@ export function buildScene(canvas) {
   const HOME = new THREE.Vector3(.35, 1.2, 0);
   const S = { pos: new THREE.Vector3(), vel: new THREE.Vector3(), acc: new THREE.Vector3(), tgt: new THREE.Vector3(),
     yaw: -.6, yawV: 0, pitch: 0, roll: 0, spin: 0, spinV: 0, rpm: 0, flash: 0, lookX: 0,
-    home: HOME.clone(), yawHome: -.6, lookHome: 0, camLift: 0, camBack: 0, lookDY: 0 };
+    home: HOME.clone(), yawHome: -.6, lookHome: 0, camLift: 0, camBack: 0, lookDY: 0,
+    off: new THREE.Vector3(), barrel: 0, barrelV: 0, padK: 1, follow: 0 };   // off/barrel/padK/follow: phone choreography
   const mouse = { x: 0, y: 0, sx: 0, sy: 0 };
   function reset() { S.pos.copy(REST); S.vel.set(0, 0, 0); S.acc.set(0, 0, 0); S.yaw = -.6; S.yawV = 0; S.pitch = S.roll = S.spin = S.spinV = 0; S.lookX = S.lookHome; }
   const V = new THREE.Vector3();
@@ -218,8 +221,9 @@ export function buildScene(canvas) {
   function step(dt, T) {
     const lifted = T > 2.15;
     S.tgt.copy(lifted ? S.home : REST);
+    if (lifted) S.tgt.add(S.off);
     if (lifted && !REDUCED) { S.tgt.y += Math.sin(T * 1.7) * .06; S.tgt.x += Math.sin(T * .63) * .05; S.tgt.z += Math.cos(T * .5) * .05; }
-    const k = lifted ? 9 : 60, c = lifted ? 4.2 : 16;
+    const k = lifted ? 9 + S.follow * 16 : 60, c = lifted ? 4.2 + S.follow * 4 : 16;   // follow: stiffer spring so set-piece moves stay tight
     S.acc.copy(S.tgt).sub(S.pos).multiplyScalar(k).addScaledVector(S.vel, -c);
     S.vel.addScaledVector(S.acc, dt); S.pos.addScaledVector(S.vel, dt);
     mouse.sx = lerp(mouse.sx, mouse.x, 1 - Math.exp(-4 * dt)); mouse.sy = lerp(mouse.sy, mouse.y, 1 - Math.exp(-4 * dt));
@@ -234,6 +238,7 @@ export function buildScene(canvas) {
     S.pitch = lerp(S.pitch, pT, a); S.roll = lerp(S.roll, rT, a);
     S.lookX = lerp(S.lookX, S.lookHome, 1 - Math.exp(-3 * dt));
     S.flash *= Math.exp(-3 * dt);
+    if (S.barrelV) { S.barrel += S.barrelV * dt; if (S.barrel >= Math.PI * 2) { S.barrel = 0; S.barrelV = 0; } }
   }
   function simulateTo(T) { reset(); for (let t = 0; t < T; t += 1 / 60) step(1 / 60, t); }
 
@@ -251,7 +256,7 @@ export function buildScene(canvas) {
       m.emissiveIntensity = T < on ? 0 : T < on + .2 ? (Math.sin(T * 95 + i * 7) > 0 ? 1.1 : .1) : 1.1;
     });
     grid.material.opacity = .85 * ease(span(T, 1.2, 2.4));
-    padMat.opacity = .6 * ease(span(T, 1.3, 2.2));
+    padMat.opacity = .6 * S.padK * ease(span(T, 1.3, 2.2));
     dustMat.opacity = .38 * ease(span(T, 1.2, 2.6));
     const ledOn = ease(span(T, 1.6, 2.2)), flash = (1 + S.flash * 2.2) * lumK;
     for (const t of tints) t.m.emissiveIntensity = t.k * (.12 + .88 * ledOn) * flash;
@@ -267,7 +272,7 @@ export function buildScene(canvas) {
     for (const r of rotors) { r.g.rotation.y += r.spin * S.rpm * 55 * dt; r.disc.material.opacity = .1 * S.rpm; }
     bladeMat.opacity = 1 - S.rpm * .78;
     // drone
-    drone.position.copy(S.pos); drone.rotation.y = S.yaw; tilt.rotation.set(S.pitch, 0, S.roll);
+    drone.position.copy(S.pos); drone.rotation.y = S.yaw; tilt.rotation.set(S.pitch, 0, S.roll + S.barrel);
     shadow.position.set(S.pos.x, .006, S.pos.z);
     const hgt = S.pos.y - REST.y; shadow.scale.setScalar(1 + hgt * .45); shadow.material.opacity = clamp(.75 - hgt * .28, .15, .75);
     // dust drift
@@ -304,6 +309,7 @@ export function buildScene(canvas) {
   document.fonts.ready.then(drawPad);
   const gl = renderer.getContext(), dbg = gl.getExtension('WEBGL_debug_renderer_info');
   return { step, apply, simulateTo, setColor, resize, S, kick: d => { S.vel.x += d * 3.2; S.vel.y += .6; },
+    roll: () => { if (!S.barrelV) { S.barrelV = Math.PI * 2 / .55; S.vel.y += 2.2; S.flash = 1; } },
     gpu: dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : 'unknown' };
 }
 
