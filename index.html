@@ -1,0 +1,118 @@
+<!doctype html>
+<!-- DroneFight concept page. (c) 2026 Devashish Tiwari (iydebu). All rights reserved. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>DroneFight · Small drones. Loud rounds.</title>
+<meta name="description" content="DroneFight is a fast drone arena fighter in development. Small drones, tight neon arenas, one timer. Grab powerups, chase kills and steal the round in the last seconds.">
+<meta name="theme-color" content="#07080a">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="DroneFight">
+<meta property="og:title" content="DroneFight · Small drones. Loud rounds.">
+<meta property="og:description" content="A fast drone arena fighter in development. Grab powerups, chase kills, steal the round in the last seconds.">
+<meta property="og:url" content="https://dronefight.iydebu.com/">
+<meta property="og:image" content="https://dronefight.iydebu.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:creator" content="@iydebu">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="vendor/fonts/fonts.css">
+<link rel="stylesheet" href="concept.css">
+<script type="importmap">
+{ "imports": { "three": "./vendor/three.module.min.js", "three/addons/": "./vendor/three-addons/" } }
+</script>
+</head>
+<body>
+<canvas id="scene" aria-hidden="true"></canvas>
+<div id="shade" aria-hidden="true"></div>
+<div id="boot" aria-hidden="true"><span>DF-01</span><i></i><span id="bootTxt">SYSTEMS CHECK</span></div>
+
+<header id="bar">
+  <a class="logo" href="#top"><span class="mark"></span>DRONEFIGHT</a>
+  <nav>
+    <a href="#feel">Feel</a><a href="#arsenal">Arsenal</a><a href="#arenas">Arenas</a>
+  </nav>
+  <button id="snd" type="button" aria-pressed="false">Sound <b>off</b></button>
+</header>
+
+<main>
+  <section id="top" class="hero">
+    <p class="kick reveal">Drone arena fighter <span>·</span> in development</p>
+    <h1 id="title" aria-label="DroneFight">DRONEFIGHT</h1>
+    <p class="pitch reveal">Small, fast drones. Tight neon arenas. One timer.<br>Grab powerups, chase kills, and steal the round with a last-second play.</p>
+    <div class="cta reveal">
+      <a class="btn" href="#feel">Launch</a>
+      <a class="btn ghost" href="https://x.com/iydebu" target="_blank" rel="noopener">Follow the build</a>
+    </div>
+    <div class="scroll reveal" aria-hidden="true"><i></i>Scroll</div>
+  </section>
+
+  <section id="feel" class="beat" data-side="left" data-drone="r">
+    <p class="num reveal">01</p>
+    <h2 class="reveal">Flying<br>is the fun</h2>
+    <p class="reveal">Before a single shot is fired, flying alone in an empty room has to feel great. Boost, dive, dodge. Every move tilts the drone, swings the camera and screams through the rotors.</p>
+  </section>
+
+  <section class="beat" data-side="right" data-drone="l">
+    <p class="num reveal">02</p>
+    <h2 class="reveal">Every hit<br>lands</h2>
+    <p class="reveal">Speed, hits and kills reach you everywhere at once: sound, camera, sparks, body and rumble. You feel the fight before you read it.</p>
+  </section>
+
+  <section class="beat" data-side="left" data-drone="r">
+    <p class="num reveal">03</p>
+    <h2 class="reveal">Readable<br>chaos</h2>
+    <p class="reveal">A swarm of drones and a storm of effects, and you still know where you are, how fast you are going and what just hit you.</p>
+  </section>
+
+  <section class="beat" data-side="right" data-drone="l">
+    <p class="num reveal">04</p>
+    <h2 class="reveal">Short,<br>loud rounds</h2>
+    <p class="reveal">Fast respawns. No waiting around. Every round comes down to the final seconds, and the most kills when the clock hits zero wins.</p>
+  </section>
+
+  <section id="arsenal" class="block" data-drone="c">
+    <p class="num reveal">Arsenal</p>
+    <h2 class="reveal">Kept small.<br>Hits hard.</h2>
+    <div class="cards">
+      <article class="card reveal"><span class="ix">A</span><h3>Blaster</h3><p>Rapid fire. Your bread and butter.</p></article>
+      <article class="card reveal"><span class="ix">B</span><h3>Missile</h3><p>Lock on. Let go. Watch them run.</p></article>
+      <article class="card reveal"><span class="ix">C</span><h3>Ram</h3><p>Fast enough? You are the weapon.</p></article>
+      <article class="card hot reveal"><span class="ix">+</span><h3>Powerups</h3><p>Overcharge. Homing swarm. EMP pulse. And more that bend the rules.</p></article>
+    </div>
+  </section>
+
+  <section id="arenas" class="block" data-drone="hi">
+    <p class="num reveal">Arenas</p>
+    <h2 class="reveal">Built in layers.<br>Up is always an option.</h2>
+    <ol class="arenas">
+      <li class="reveal"><b>Abandoned factory</b><span>Wind fans throw you off course. Laser grids blink on and off.</span></li>
+      <li class="reveal"><b>Night rooftops</b><span>Neon signs and narrow gaps between the towers.</span></li>
+      <li class="reveal"><b>The hangar</b><span>A wide open centre, ringed with tight vents for shortcuts.</span></li>
+    </ol>
+  </section>
+
+  <section id="pilot" class="block pilot" data-drone="r">
+    <p class="num reveal">Your colour</p>
+    <h2 class="reveal">One pilot.<br>One colour.</h2>
+    <p class="reveal">Every drone glows in a single strong colour, so you can read any fight at a glance. Try one.</p>
+    <div id="swatches" class="sw reveal" role="radiogroup" aria-label="Pilot colour"></div>
+  </section>
+
+  <footer class="end" data-drone="hi">
+    <h2 class="reveal">Coming<br>in hot.</h2>
+    <p class="reveal">DroneFight is in early development in Unreal Engine 5. No release date yet.</p>
+    <div class="cta reveal">
+      <a class="btn" href="https://x.com/iydebu" target="_blank" rel="noopener">Follow on X</a>
+      <a class="btn ghost" href="https://www.youtube.com/@iydebu" target="_blank" rel="noopener">YouTube</a>
+      <a class="btn ghost" href="https://github.com/iydebu" target="_blank" rel="noopener">GitHub</a>
+    </div>
+    <p class="fine">Made by <a href="https://iydebu.com">Devashish Tiwari (iydebu)</a> · © 2026 All rights reserved.</p>
+  </footer>
+</main>
+
+<script type="module" src="concept.js"></script>
+</body>
+</html>
