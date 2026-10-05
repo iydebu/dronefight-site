@@ -1,5 +1,5 @@
 {
-  "latest": "0.1.1",
+  "latest": "0.1.2",
   "download_url": "https://dronefight.iydebu.com/#download",
-  "notes": "Internal alpha 2: startup splash + loading screen, match loading screen, room fixes, ping, GRAPHICS arrows."
+  "notes": "Internal alpha 3: removes the red LIGHTING NEEDS TO BE REBUILT text on screen."
 }
