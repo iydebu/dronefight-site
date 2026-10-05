@@ -1,5 +1,5 @@
 {
   "latest": "0.1.1",
   "download_url": "https://dronefight.iydebu.com/",
-  "notes": "TEST update - not a real build, ignore."
+  "notes": "Internal alpha 2: startup splash + loading screen, match loading screen, room fixes, ping, GRAPHICS arrows."
 }
