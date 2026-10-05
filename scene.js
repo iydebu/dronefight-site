@@ -64,6 +64,9 @@ export const SND = {
   back() { this.noiseHit(2400, 300, .34, .26); },
   clunk() { this.osc('sine', 95, 36, .24, .32); this.noiseHit(1400, 600, .05, .12, .7); },
   chime() { this.osc('sine', 1320, 1320, .18, .06); this.osc('sine', 1980, 1980, .26, .05, .07); },
+  laser() { this.osc('square', 1800 + Math.random() * 200, 240, .11, .05); this.osc('sawtooth', 900, 120, .08, .035); },
+  rocket() { this.noiseHit(500, 2200, .6, .22, .8); this.osc('sawtooth', 120, 60, .5, .06); },
+  boom() { this.noiseHit(900, 80, .7, .45, .6); this.osc('sine', 80, 30, .5, .3); },
 };
 
 /* ------------------------------------------------------------------ 3D hangar + drone */
@@ -156,47 +159,206 @@ export function buildScene(canvas) {
   const shadow = new THREE.Mesh(new THREE.PlaneGeometry(2.8, 2.8), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(shCv), transparent: true, depthWrite: false }));
   shadow.rotation.x = -Math.PI / 2; shadow.position.y = .006; scene.add(shadow);
 
-  /* ---- drone ---- */
+  /* ---- drone: the game's sci-fi gunship (armoured pod + eye, two big side fans, twin blasters, rocket pods) ---- */
   const drone = new THREE.Group(), tilt = new THREE.Group();
   drone.add(tilt); scene.add(drone);
-  const dark = new THREE.MeshStandardMaterial({ color: 0x2c3036, metalness: .55, roughness: .34 });
-  const mid = new THREE.MeshStandardMaterial({ color: 0x5a606b, metalness: .5, roughness: .36 });
-  const carbon = new THREE.MeshStandardMaterial({ color: 0x1d1f23, metalness: .3, roughness: .5 });
-  const add = (geo, mat, x = 0, y = 0, z = 0) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); tilt.add(m); return m; };
+  const dark = new THREE.MeshStandardMaterial({ color: 0x23272e, metalness: .7, roughness: .3 });
+  const mid = new THREE.MeshStandardMaterial({ color: 0x5d6470, metalness: .65, roughness: .3 });
+  const light = new THREE.MeshStandardMaterial({ color: 0xa9b0bb, metalness: .5, roughness: .32 });
+  const carbon = new THREE.MeshStandardMaterial({ color: 0x15171b, metalness: .35, roughness: .55 });
+  const add = (geo, mat, x = 0, y = 0, z = 0, p = tilt) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); p.add(m); return m; };
 
-  add(new RoundedBoxGeometry(.8, .2, 1.18, 3, .07), dark);
-  add(new RoundedBoxGeometry(.56, .14, .76, 3, .06), mid, 0, .14, -.05);
-  add(new THREE.BoxGeometry(.05, .022, .64), tint(3.2), 0, .218, -.05);
-  add(new THREE.SphereGeometry(.125, 24, 16), dark, 0, -.03, .6);
-  const lens = add(new THREE.CylinderGeometry(.062, .062, .04, 40), new THREE.MeshStandardMaterial({ color: 0x05060a, emissive: 0x3a4766, emissiveIntensity: 1.2, metalness: 1, roughness: .1 }), 0, -.03, .715);
-  lens.rotation.x = Math.PI / 2;
-  for (const x of [-.27, .27]) {
-    add(new THREE.BoxGeometry(.035, .035, .92), mid, x, -.27, 0);
-    add(new THREE.BoxGeometry(.03, .1, .03), mid, x, -.2, .3);
-    add(new THREE.BoxGeometry(.03, .1, .03), mid, x, -.2, -.3);
+  // centre pod: armoured hull, raised spine, side intakes
+  add(new RoundedBoxGeometry(.6, .36, .86, 4, .12), dark, 0, 0, -.02);
+  add(new RoundedBoxGeometry(.42, .14, .62, 3, .06), mid, 0, .19, -.08);
+  add(new THREE.BoxGeometry(.04, .02, .5), tint(3.2), 0, .265, -.08);
+  for (const x of [-.31, .31]) {
+    add(new RoundedBoxGeometry(.06, .16, .4, 2, .025), carbon, x, .02, -.12);
+    add(new THREE.BoxGeometry(.012, .03, .3), tint(2.2), x * 1.07, .02, -.12);
   }
-  add(new THREE.BoxGeometry(.18, .03, .03), tint(2.6), 0, .02, -.6);
-  const ant = add(new THREE.CylinderGeometry(.008, .012, .34, 6), dark, .18, .27, -.48); ant.rotation.x = -.5;
+  add(new THREE.BoxGeometry(.22, .035, .035), tint(2.6), 0, .05, -.46);   // tail light
+  // the eye: a big round sensor at the front, ringed in pilot colour
+  add(new THREE.SphereGeometry(.2, 32, 20), mid, 0, .02, .36);
+  const eyeRing = add(new THREE.TorusGeometry(.155, .022, 12, 48), tint(3.4), 0, .02, .5); eyeRing.rotation.y = 0;
+  const lens = add(new THREE.CylinderGeometry(.11, .11, .05, 40), new THREE.MeshStandardMaterial({ color: 0x05060a, emissive: 0x3a5a99, emissiveIntensity: 1.6, metalness: 1, roughness: .08 }), 0, .02, .52);
+  lens.rotation.x = Math.PI / 2;
+  add(new THREE.SphereGeometry(.035, 16, 10), new THREE.MeshBasicMaterial({ color: 0xcfe6ff }), .03, .05, .55);   // glint
+  const ant = add(new THREE.CylinderGeometry(.007, .011, .3, 6), dark, -.13, .33, -.3); ant.rotation.x = -.45;
 
+  // landing struts + skids
+  for (const x of [-.22, .22]) {
+    add(new THREE.BoxGeometry(.035, .035, .78), mid, x, -.27, -.02);
+    for (const z of [.22, -.26]) { const s = add(new THREE.BoxGeometry(.03, .14, .03), mid, x, -.2, z); s.rotation.z = x > 0 ? -.25 : .25; }
+  }
+
+  // side arms out to two big ducted fans (the game drone's silhouette)
   const bladeMat = new THREE.MeshStandardMaterial({ color: 0x22252b, metalness: .4, roughness: .45, transparent: true });
   const whiteLed = new THREE.MeshStandardMaterial({ color: 0x000000, emissive: 0xdde3f0, emissiveIntensity: 0 });
   const rotors = [];
-  for (const [sx, sz] of [[1, 1], [-1, 1], [1, -1], [-1, -1]]) {
-    const dir = new THREE.Vector3(sx, 0, sz).normalize(), tip = dir.clone().multiplyScalar(1.02);
-    const arm = add(new THREE.BoxGeometry(.1, .055, 1.0), carbon); arm.position.copy(dir.clone().multiplyScalar(.55)); arm.rotation.y = Math.atan2(sx, sz);
-    add(new THREE.CylinderGeometry(.085, .1, .13, 40), mid, tip.x, .05, tip.z);
-    add(new THREE.CylinderGeometry(.07, .07, .04, 40), dark, tip.x, .135, tip.z);
-    const duct = add(new THREE.TorusGeometry(.5, .024, 16, 128), dark, tip.x, .13, tip.z); duct.rotation.x = Math.PI / 2;
-    const led = add(new THREE.TorusGeometry(.5, .008, 10, 128), sz > 0 ? tint(3.4) : whiteLed, tip.x, .1, tip.z); led.rotation.x = Math.PI / 2;
-    const rotor = new THREE.Group(); rotor.position.set(tip.x, .155, tip.z); tilt.add(rotor);
-    for (let b = 0; b < 3; b++) {
-      const h = new THREE.Group(); h.rotation.y = b * Math.PI * 2 / 3;
-      const bl = new THREE.Mesh(new THREE.BoxGeometry(.43, .008, .075), bladeMat); bl.position.x = .23; bl.rotation.x = .2;
+  const FAN_X = 1.12, FAN_R = .44;
+  for (const sx of [-1, 1]) {
+    const arm = add(new RoundedBoxGeometry(.6, .09, .16, 2, .035), carbon, sx * .58, .06, -.04); arm.rotation.z = sx * -.08;
+    add(new THREE.BoxGeometry(.5, .02, .03), tint(2.0), sx * .6, .115, .03);
+    const fx = sx * FAN_X;
+    // duct: thick outer lip + inner wall + under-ring
+    const lip = add(new THREE.TorusGeometry(FAN_R, .055, 18, 96), dark, fx, .12, 0); lip.rotation.x = Math.PI / 2;
+    add(new THREE.CylinderGeometry(FAN_R - .01, FAN_R - .03, .16, 64, 1, true), new THREE.MeshStandardMaterial({ color: 0x1a1d22, metalness: .6, roughness: .4, side: THREE.DoubleSide }), fx, .07, 0);
+    const led = add(new THREE.TorusGeometry(FAN_R + .02, .012, 10, 128), tint(3.4), fx, .03, 0); led.rotation.x = Math.PI / 2;
+    const ledW = add(new THREE.TorusGeometry(FAN_R - .06, .007, 8, 96), whiteLed, fx, .155, 0); ledW.rotation.x = Math.PI / 2;
+    // cross struts + motor hub
+    for (const a of [0, Math.PI / 2]) { const s = add(new THREE.BoxGeometry(FAN_R * 2 - .04, .025, .04), mid, fx, .04, 0); s.rotation.y = a; }
+    add(new THREE.CylinderGeometry(.075, .09, .12, 32), light, fx, .07, 0);
+    add(new THREE.CylinderGeometry(.04, .04, .03, 24), tint(2.4), fx, .14, 0);
+    const rotor = new THREE.Group(); rotor.position.set(fx, .12, 0); tilt.add(rotor);
+    for (let b = 0; b < 5; b++) {
+      const h = new THREE.Group(); h.rotation.y = b * Math.PI * 2 / 5;
+      const bl = new THREE.Mesh(new THREE.BoxGeometry(.36, .008, .07), bladeMat); bl.position.x = .2; bl.rotation.x = .28;
       h.add(bl); rotor.add(h);
     }
-    const disc = add(new THREE.CircleGeometry(.46, 96), new THREE.MeshBasicMaterial({ color: 0x9aa3b5, transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide }), tip.x, .158, tip.z);
+    const disc = add(new THREE.CircleGeometry(FAN_R - .04, 96), new THREE.MeshBasicMaterial({ color: 0x9aa3b5, transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide }), fx, .125, 0);
     disc.rotation.x = -Math.PI / 2;
-    rotors.push({ g: rotor, disc, spin: sx * sz > 0 ? 1 : -1 });
+    rotors.push({ g: rotor, disc, spin: sx });
+  }
+
+  /* ---- weapons, as in the game: twin blaster under the nose, a rocket pod on each shoulder ---- */
+  const heatMat = new THREE.MeshStandardMaterial({ color: 0x2a2c30, metalness: .8, roughness: .3, emissive: 0xff5a14, emissiveIntensity: 0 });
+  const muzzles = [];
+  for (const x of [-.11, .11]) {
+    add(new RoundedBoxGeometry(.11, .1, .34, 2, .03), dark, x, -.17, .3);
+    const b = add(new THREE.CylinderGeometry(.026, .03, .34, 16), heatMat, x, -.17, .58); b.rotation.x = Math.PI / 2;
+    for (const z of [.5, .6]) { const r = add(new THREE.CylinderGeometry(.036, .036, .025, 16), mid, x, -.17, z); r.rotation.x = Math.PI / 2; }
+    const tip = add(new THREE.TorusGeometry(.03, .009, 8, 24), tint(2.6), x, -.17, .755);
+    muzzles.push(new THREE.Object3D()); muzzles.at(-1).position.set(x, -.17, .8); tilt.add(muzzles.at(-1));
+    void tip;
+  }
+  const podTubes = [];   // { cone, home } rockets waiting in the tubes
+  const coneMat = new THREE.MeshStandardMaterial({ color: 0x9a1c1c, metalness: .3, roughness: .4, emissive: 0xff2a1a, emissiveIntensity: .25 });
+  for (const sx of [-1, 1]) {
+    const px = sx * .42;
+    add(new RoundedBoxGeometry(.2, .16, .4, 2, .03), mid, px, .2, .02);
+    add(new THREE.BoxGeometry(.204, .02, .3), tint(1.6), px, .285, 0);
+    for (const [ox, oy] of [[-.045, .035], [.045, .035], [-.045, -.035], [.045, -.035]]) {
+      const t = add(new THREE.CylinderGeometry(.034, .034, .03, 20), carbon, px + ox, .2 + oy, .225); t.rotation.x = Math.PI / 2;
+      const c = add(new THREE.ConeGeometry(.026, .07, 16), coneMat, px + ox, .2 + oy, .235); c.rotation.x = Math.PI / 2;
+      podTubes.push({ cone: c, back: 0 });
+    }
+  }
+
+  /* ---- shots: pooled blaster bolts, rockets with smoke trail, muzzle light ---- */
+  const BOLT = new THREE.Color(.25, .75, 3.2);   // the game's own-team blue, pushed over 1 so it blooms
+  const boltCore = new THREE.MeshBasicMaterial({ color: BOLT, toneMapped: false });
+  const boltGlow = new THREE.MeshBasicMaterial({ color: new THREE.Color(.1, .35, 1.4), transparent: true, opacity: .35, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false });
+  const boltGeo = new THREE.CylinderGeometry(.018, .018, .55, 8); boltGeo.rotateX(Math.PI / 2);
+  const glowGeo = new THREE.CylinderGeometry(.05, .05, .7, 10); glowGeo.rotateX(Math.PI / 2);
+  const bolts = [];
+  for (let i = 0; i < 24; i++) {
+    const g = new THREE.Group(); g.add(new THREE.Mesh(boltGeo, boltCore), new THREE.Mesh(glowGeo, boltGlow)); g.visible = false; scene.add(g);
+    bolts.push({ g, v: new THREE.Vector3(), life: 0 });
+  }
+  const flashLight = new THREE.PointLight(0x5aa0ff, 0, 5, 1.6); scene.add(flashLight);
+  const flashMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(.6, 1.2, 4), transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false });
+  const flashes = muzzles.map(() => { const m = new THREE.Mesh(new THREE.SphereGeometry(.07, 12, 8), flashMat); m.visible = false; scene.add(m); return m; });
+
+  const TRAIL = 90;
+  const trailPos = new Float32Array(TRAIL * 3), trailCol = new Float32Array(TRAIL * 3), trailAge = new Float32Array(TRAIL).fill(9);
+  const trailGeo = new THREE.BufferGeometry();
+  trailGeo.setAttribute('position', new THREE.BufferAttribute(trailPos, 3)); trailGeo.setAttribute('color', new THREE.BufferAttribute(trailCol, 3));
+  const trail = new THREE.Points(trailGeo, new THREE.PointsMaterial({ size: .16, vertexColors: true, transparent: true, opacity: .9, blending: THREE.AdditiveBlending, depthWrite: false }));
+  trail.frustumCulled = false; scene.add(trail);
+  let trailHead = 0;
+  const rocketMat = new THREE.MeshStandardMaterial({ color: 0xc9ccd2, metalness: .5, roughness: .35 });
+  const flameMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(3, 1.3, .4), transparent: true, opacity: .95, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false });
+  const rockets = [];
+  for (let i = 0; i < 4; i++) {
+    const g = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(.03, .03, .26, 12), rocketMat); body.rotation.x = Math.PI / 2; g.add(body);
+    const nose = new THREE.Mesh(new THREE.ConeGeometry(.03, .08, 12), coneMat); nose.rotation.x = Math.PI / 2; nose.position.z = .17; g.add(nose);
+    const fl = new THREE.Mesh(new THREE.ConeGeometry(.04, .22, 10), flameMat); fl.rotation.x = -Math.PI / 2; fl.position.z = -.24; g.add(fl);
+    g.visible = false; scene.add(g);
+    rockets.push({ g, fl, v: new THREE.Vector3(), aim: new THREE.Vector3(), life: 0, puff: 0 });
+  }
+  const boomMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(3, 1.4, .5), transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false });
+  const boom = new THREE.Mesh(new THREE.SphereGeometry(.5, 20, 14), boomMat); boom.visible = false; scene.add(boom);
+  const boomLight = new THREE.PointLight(0xff8a3a, 0, 9, 1.5); scene.add(boomLight);
+  const W = { heat: 0, side: 0, recoil: 0, flashT: 0, boomT: 9, onShot: null, onBoom: null };
+  const _p = new THREE.Vector3(), _q = new THREE.Quaternion(), _f = new THREE.Vector3(), _z = new THREE.Vector3(0, 0, 1);
+
+  function fireBolt() {
+    if (W.heat > .95) return false;
+    const i = W.side = 1 - W.side, b = bolts.find(x => x.life <= 0);
+    if (!b) return false;
+    tilt.updateWorldMatrix(true, true);
+    muzzles[i].getWorldPosition(_p); tilt.getWorldQuaternion(_q); _f.copy(_z).applyQuaternion(_q);
+    _f.x += (Math.random() - .5) * .03; _f.y += (Math.random() - .5) * .03; _f.normalize();
+    b.g.position.copy(_p); b.g.quaternion.setFromUnitVectors(_z, _f); b.v.copy(_f).multiplyScalar(26); b.life = .42; b.g.visible = true;
+    flashes[i].position.copy(_p); flashes[i].visible = true; flashMat.opacity = 1; flashLight.position.copy(_p); W.flashT = 1;
+    W.heat = Math.min(1, W.heat + .07); W.recoil = 1;
+    S.vel.addScaledVector(_f, -.35);
+    W.onShot && W.onShot('bolt');
+    return true;
+  }
+  function fireRocket() {
+    const r = rockets.find(x => x.life <= 0), tube = podTubes.find(t => t.back <= 0);
+    if (!r || !tube) return false;
+    tilt.updateWorldMatrix(true, true);
+    tube.cone.getWorldPosition(_p); tilt.getWorldQuaternion(_q); _f.copy(_z).applyQuaternion(_q);
+    tube.cone.visible = false; tube.back = 2.4;
+    r.g.position.copy(_p); r.v.copy(_f).multiplyScalar(2.5); r.v.y += .9;
+    // homing target: a point far ahead and off to one side, so it curves like a locked rocket
+    r.aim.copy(_p).addScaledVector(_f, 14); r.aim.x += (Math.random() - .5) * 6; r.aim.y = 1 + Math.random() * 2.5;
+    r.life = 1.7; r.g.visible = true; r.puff = 0;
+    S.vel.addScaledVector(_f, -.6); S.vel.y += .4; S.flash = .6;
+    W.onShot && W.onShot('rocket');
+    return true;
+  }
+  function stepWeapons(dt) {
+    if (!(dt > 0)) return;
+    W.heat = Math.max(0, W.heat - dt * (W.heat > .95 ? .45 : .35));
+    W.recoil *= Math.exp(-14 * dt);
+    heatMat.emissiveIntensity = Math.pow(W.heat, 1.6) * 3.2;
+    W.flashT = Math.max(0, W.flashT - dt * 22);
+    flashLight.intensity = W.flashT * 14; flashMat.opacity = W.flashT;
+    if (W.flashT <= 0) flashes.forEach(f => (f.visible = false));
+    for (const b of bolts) {
+      if (b.life <= 0) continue;
+      b.life -= dt; b.g.position.addScaledVector(b.v, dt);
+      if (b.life <= 0) b.g.visible = false;
+    }
+    for (const t of podTubes) if (t.back > 0 && (t.back -= dt) <= 0) t.cone.visible = true;
+    for (const r of rockets) {
+      if (r.life <= 0) continue;
+      r.life -= dt;
+      // accelerate and steer toward the aim point (simple homing)
+      _f.copy(r.aim).sub(r.g.position).normalize().multiplyScalar(16);
+      r.v.lerp(_f, 1 - Math.exp(-2.4 * dt));
+      r.g.position.addScaledVector(r.v, dt);
+      r.g.quaternion.setFromUnitVectors(_z, _f.copy(r.v).normalize());
+      r.fl.scale.setScalar(.8 + Math.random() * .5);
+      r.puff += dt;
+      while (r.puff > .012) {
+        r.puff -= .012;
+        const k = trailHead = (trailHead + 1) % TRAIL;
+        trailPos[k * 3] = r.g.position.x - r.v.x * .02 + (Math.random() - .5) * .04;
+        trailPos[k * 3 + 1] = r.g.position.y - r.v.y * .02 + (Math.random() - .5) * .04;
+        trailPos[k * 3 + 2] = r.g.position.z - r.v.z * .02 + (Math.random() - .5) * .04;
+        trailAge[k] = 0;
+      }
+      if (r.life <= 0 || r.g.position.distanceTo(r.aim) < .6) {
+        r.life = 0; r.g.visible = false;
+        boom.position.copy(r.g.position); boomLight.position.copy(r.g.position); W.boomT = 0; boom.visible = true;
+        W.onBoom && W.onBoom();
+      }
+    }
+    for (let k = 0; k < TRAIL; k++) {
+      const a = trailAge[k] += dt, f = Math.max(0, 1 - a / .7);
+      trailCol[k * 3] = f * (a < .08 ? 1.6 : .55); trailCol[k * 3 + 1] = f * (a < .08 ? .9 : .5); trailCol[k * 3 + 2] = f * (a < .08 ? .4 : .52);
+      if (f > 0) trailPos[k * 3 + 1] += dt * .25;
+    }
+    trailGeo.attributes.position.needsUpdate = true; trailGeo.attributes.color.needsUpdate = true;
+    W.boomT += dt;
+    const bt = W.boomT / .45;
+    boom.visible = bt < 1; boom.scale.setScalar(.3 + bt * 1.6); boomMat.opacity = Math.max(0, 1 - bt);
+    boomLight.intensity = Math.max(0, 1 - bt) * 40;
   }
 
   // post
@@ -215,7 +377,7 @@ export function buildScene(canvas) {
   const S = { pos: new THREE.Vector3(), vel: new THREE.Vector3(), acc: new THREE.Vector3(), tgt: new THREE.Vector3(),
     yaw: -.6, yawV: 0, pitch: 0, roll: 0, spin: 0, spinV: 0, rpm: 0, flash: 0, lookX: 0,
     home: HOME.clone(), yawHome: -.6, lookHome: 0, camLift: 0, camBack: 0, lookDY: 0,
-    off: new THREE.Vector3(), barrel: 0, barrelV: 0, padK: 1, follow: 0 };   // off/barrel/padK/follow: phone choreography
+    off: new THREE.Vector3(), barrel: 0, barrelV: 0, padK: 1, follow: 0, scaleK: 1 };   // off/barrel/padK/follow: phone choreography
   const mouse = { x: 0, y: 0, sx: 0, sy: 0 };
   function reset() { S.pos.copy(REST); S.vel.set(0, 0, 0); S.acc.set(0, 0, 0); S.yaw = -.6; S.yawV = 0; S.pitch = S.roll = S.spin = S.spinV = 0; S.lookX = S.lookHome; }
   const V = new THREE.Vector3();
@@ -274,7 +436,9 @@ export function buildScene(canvas) {
     for (const r of rotors) { r.g.rotation.y += r.spin * S.rpm * 55 * dt; r.disc.material.opacity = .1 * S.rpm; }
     bladeMat.opacity = 1 - S.rpm * .78;
     // drone
-    drone.position.copy(S.pos); drone.rotation.y = S.yaw; tilt.rotation.set(S.pitch, 0, S.roll + S.barrel);
+    drone.position.copy(S.pos); drone.rotation.y = S.yaw; drone.scale.setScalar(S.scaleK); tilt.rotation.set(S.pitch - W.recoil * .06, 0, S.roll + S.barrel);
+    tilt.position.z = -W.recoil * .05;
+    stepWeapons(dt);
     shadow.position.set(S.pos.x, .006, S.pos.z);
     const hgt = S.pos.y - REST.y; shadow.scale.setScalar(1 + hgt * .45); shadow.material.opacity = clamp(.75 - hgt * .28, .15, .75);
     // dust drift
@@ -321,6 +485,7 @@ export function buildScene(canvas) {
   const gl = renderer.getContext(), dbg = gl.getExtension('WEBGL_debug_renderer_info');
   return { step, apply, simulateTo, setColor, resize, quality, fps, dpr: () => renderer.getPixelRatio(), S, kick: d => { S.vel.x += d * 3.2; S.vel.y += .6; },
     roll: () => { if (!S.barrelV) { S.barrelV = Math.PI * 2 / .55; S.vel.y += 2.2; S.flash = 1; } },
+    fireBolt, fireRocket, W, rocketsLive: () => rockets.some(r => r.life > 0),
     gpu: dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : 'unknown' };
 }
 

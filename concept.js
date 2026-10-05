@@ -31,6 +31,17 @@ COLORS.forEach(([name, hex]) => {
 let saved = COLORS[0][1]; try { const c = localStorage.getItem('df-color'); if (/^#[0-9a-f]{6}$/i.test(c || '')) saved = c; } catch {}
 setColor(saved, false);
 
+/* ---- phones: the long safety panels start closed (tap to open); PC keeps them open ---- */
+if (phone()) document.querySelectorAll('details.panel').forEach(d => d.removeAttribute('open'));
+
+/* ---- copy the SHA-256 ---- */
+$('#copySha')?.addEventListener('click', async e => {
+  const b = e.currentTarget, t = $('#sha').textContent.trim();
+  try { await navigator.clipboard.writeText(t); b.textContent = 'Copied'; }
+  catch { const r = document.createRange(); r.selectNodeContents($('#sha')); getSelection().removeAllRanges(); getSelection().addRange(r); b.textContent = 'Select'; }
+  setTimeout(() => (b.textContent = 'Copy'), 1600);
+});
+
 /* ---- where the drone sits for each section ---- */
 const SPOTS = {
   hero: { x: .35, y: 1.2, z: 0, yaw: -.6, look: 0, lift: 0, back: 0 },
@@ -46,7 +57,7 @@ const PHONE_SPOTS = {   // text sits at the bottom on phones, so the drone flies
   c:    { x: 0, y: 2.3, z: -.6, yaw: -.25, look: 0, lift: .8, back: 2.2, dy: -.7 },
   hi:   { x: 0, y: 2.9, z: -1.2, yaw: -1.6, look: 0, lift: 1.5, back: 1.8, dy: -.6 },
 };
-let spot = 'hero', spotPrev = 'hero';
+let spot = 'hero', spotPrev = 'hero', fireMode = '';
 function applySpot(k) {
   if (G) G.S.padK = phone() ? .3 : 1;   // landing-pad decal sits behind the title on short screens
   if (portrait()) return;   // phones are driven every frame by phoneDrive
@@ -74,7 +85,8 @@ function onScroll() {
   const mid = innerHeight / 2; let best = secs[0], bd = 1e9;
   for (const s of secs) { const r = s.getBoundingClientRect(), d = Math.abs(r.top + r.height / 2 - mid); if (d < bd) { bd = d; best = s; } }
   const k = best.dataset.drone || (best.id === 'top' ? 'hero' : 'c');
-  const side = best.classList.contains('beat') ? best.dataset.side : best.id === 'top' ? 'hero' : best.id === 'pilot' ? 'pilot' : best.tagName === 'FOOTER' ? 'end' : 'block';
+  fireMode = best.dataset.fire || '';
+  const side = best.classList.contains('beat') ? best.dataset.side : best.id === 'top' ? 'hero' : best.id === 'pilot' ? 'pilot' : best.id === 'safe' ? 'safe' : best.tagName === 'FOOTER' ? 'end' : 'block';
   setSpot(k, side);
 }
 addEventListener('scroll', onScroll, { passive: true });
@@ -130,6 +142,7 @@ function phoneDrive(T, dt) {
   S.yawHome = lerp(A.yaw + ya, B.yaw + yb, f) + tiltX * .4;
   S.follow = (ma === 'orbit' || ma === 'dash' ? 1 - f : 0) + (mb === 'orbit' || mb === 'dash' ? f : 0);
   S.padK = .25;   // the landing-pad decal sits right under the hero text on phones
+  S.scaleK = clamp(innerWidth / 560, .6, .8);   // the side-fan drone is wide: keep both fans on narrow screens
   scrollV *= Math.exp(-5 * dt);
 }
 addEventListener('scroll', () => {
@@ -137,13 +150,16 @@ addEventListener('scroll', () => {
   scrollV = lerp(scrollV, (scrollY - lastY) / dts, .5); lastY = scrollY; lastYT = now;
 }, { passive: true });
 
-// tap empty space: barrel roll (+ short buzz on Android)
-let tap = null;
+// tap empty space: blaster burst; tap twice quickly: barrel roll (+ short buzz on Android)
+let tap = null, lastTap = 0, burst = 0, burstT = 0, autoT = 0, rocketT = 1.2;
 addEventListener('pointerdown', e => { tap = e.target.closest('a, button') ? null : { x: e.clientX, y: e.clientY, t: performance.now() }; }, { passive: true });
 addEventListener('pointerup', e => {
   if (!tap || !G || T < INTRO_END) return;
   if (Math.hypot(e.clientX - tap.x, e.clientY - tap.y) < 12 && performance.now() - tap.t < 350) {
-    G.roll(); SND.open(); if (TOUCH && navigator.vibrate) navigator.vibrate(25);
+    const now = performance.now();
+    if (now - lastTap < 380) { G.roll(); SND.open(); if (TOUCH && navigator.vibrate) navigator.vibrate(25); burst = 0; }
+    else { burst = 5; burstT = 0; if (TOUCH && navigator.vibrate) navigator.vibrate(12); }
+    lastTap = now;
   }
   tap = null;
 }, { passive: true });
@@ -160,7 +176,17 @@ if (TOUCH && 'DeviceOrientationEvent' in window) {
     addEventListener('click', () => DeviceOrientationEvent.requestPermission().then(r => { if (r === 'granted') addEventListener('deviceorientation', onTilt); }).catch(() => {}), { once: true });
   } else addEventListener('deviceorientation', onTilt);
 }
-function resetPhone() { if (!G) return; G.S.off.set(0, 0, 0); G.S.follow = 0; G.S.padK = 1; applySpot(spot); }
+function resetPhone() { if (!G) return; G.S.off.set(0, 0, 0); G.S.follow = 0; G.S.padK = 1; G.S.scaleK = 1; applySpot(spot); }
+
+/* ---- guns: the drone shows off the game's weapons in the sections that talk about them ---- */
+if (G) { G.W.onShot = k => (k === 'bolt' ? SND.laser() : SND.rocket()); G.W.onBoom = () => SND.boom(); }
+function guns(dt) {
+  if (burst > 0 && (burstT -= dt) <= 0) { G.fireBolt(); burst--; burstT = .085; }
+  if (REDUCED || !fireMode || document.hidden) return;
+  autoT -= dt; rocketT -= dt;
+  if (autoT <= 0 && burst <= 0 && /blaster|both/.test(fireMode)) { burst = 6; burstT = 0; autoT = 1.7 + Math.random() * .6; }
+  if (rocketT <= 0 && /rocket|both/.test(fireMode)) { G.fireRocket(); rocketT = 3.4; }
+}
 
 /* ---- intro ---- */
 let T = 0, prevT = 0, frozen = false, lastTitle = '';
@@ -203,6 +229,7 @@ function frame(now) {
     S.camLift += ((S._lift || 0) - S.camLift) * w; S.camBack += ((S._back || 0) - S.camBack) * w; S.lookDY += ((S._dy || 0) - S.lookDY) * w;
     if (portrait() && T >= INTRO_END - 1.2) phoneDrive(T, frozen ? 0 : dt);
     if (!frozen) G.step(dt, T);
+    if (!frozen && T > INTRO_END) guns(dt);
     if (!frozen && T > INTRO_END) G.quality(dt);
     G.apply(T, frozen ? 0 : dt);
     if (SND.on) SND.rpm(S.rpm);
@@ -223,6 +250,8 @@ window.CONCEPT = {
   info: () => ({ T, spot, side: document.body.dataset.side, ready: document.body.classList.contains('ready'), gl: !!G, gpu: G && G.gpu,
     drone: G && G.S.pos.toArray().map(v => +v.toFixed(2)), yaw: G && +G.S.yaw.toFixed(2), portrait: portrait(), sections: secs.length, dpr: G && G.dpr(), fps: G && G.fps }),
   roll: () => G && G.roll(),
+  fire: (n = 6) => { burst = n; burstT = 0; },
+  rocket: () => G && G.fireRocket(),
   // test: run the phone flight sim (no rendering) for `sec` seconds at the current scroll; returns how far it moved
   probe(sec = 3) {
     const S = G.S, lo = [1e9, 1e9, 1e9, 1e9], hi = [-1e9, -1e9, -1e9, -1e9];
