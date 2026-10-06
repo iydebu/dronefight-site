@@ -151,9 +151,12 @@ details.panel > summary h3 { display: inline; }
 .smart i { font: 700 11px var(--mono); font-style: normal; width: 18px; height: 18px; display: inline-grid; place-items: center; background: var(--c); color: var(--c-ink); border-radius: 50%; }
 .hash { display: flex; align-items: stretch; border: 1px solid var(--line2); margin: 6px 0 10px; }
 .hash code { flex: 1; min-width: 0; padding: 9px 10px; font: 500 12px/1.45 var(--mono); color: var(--text); word-break: break-all; }
-.hash button { padding: 0 14px; font: 700 12px var(--cond); letter-spacing: .18em; text-transform: uppercase; color: var(--c-ink); background: var(--c); }
+.hash button { flex: none; min-width: 96px; padding: 0 10px; font: 700 12px var(--cond); letter-spacing: .18em; text-transform: uppercase; color: var(--c-ink); background: var(--c); }
 .panel .small { font-size: 13px; color: var(--mute); }
 .panel code { font-family: var(--mono); font-size: 12px; color: var(--text2); }
+.panel .vt { display: flex; gap: 8px; align-items: baseline; margin: 4px 0 12px; padding: 9px 10px; border: 1px solid var(--line2); border-left: 2px solid var(--c); font-size: 14px; }
+.vt::before { content: "\2713"; color: var(--c); font-weight: 700; }
+.vt b { color: var(--text); }
 .links { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
 .links a { font: 600 14px var(--cond); letter-spacing: .14em; text-transform: uppercase; color: var(--c); text-decoration: none; }
 .links a::after { content: " \2192"; }
@@ -245,6 +248,10 @@ body[data-side="safe"] #shade { background: rgba(7,8,10,.74); }
   .smart { padding: 10px 12px; }
   .smart .t { font-size: 15px; }
   .smart p { font-size: 11px; margin-bottom: 6px; }
+}
+
+/* phones in any orientation (899px = concept.js phone(), innerWidth < 900): the safety panels start closed, so show the tap-to-open +/- */
+@media (max-width: 899px) {
   details.panel > summary { display: flex; align-items: center; justify-content: space-between; cursor: pointer; margin: 0; }
   details.panel > summary h3 { margin: 0; }
   details.panel > summary::after { content: "+"; font: 500 22px/1 var(--mono); color: var(--c); }

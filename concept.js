@@ -32,7 +32,11 @@ let saved = COLORS[0][1]; try { const c = localStorage.getItem('df-color'); if (
 setColor(saved, false);
 
 /* ---- phones: the long safety panels start closed (tap to open); PC keeps them open ---- */
-if (phone()) document.querySelectorAll('details.panel').forEach(d => d.removeAttribute('open'));
+// On PC a click on the heading must not fold a panel away (it left an empty box with no way to tell it opens again).
+const panels = [...document.querySelectorAll('details.panel')];
+if (phone()) panels.forEach(d => d.removeAttribute('open'));
+panels.forEach(d => d.querySelector('summary').addEventListener('click', e => { if (!phone()) e.preventDefault(); }));
+addEventListener('resize', () => { if (!phone()) panels.forEach(d => (d.open = true)); });
 
 /* ---- copy the SHA-256 ---- */
 $('#copySha')?.addEventListener('click', async e => {
