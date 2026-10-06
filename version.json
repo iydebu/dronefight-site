@@ -1,5 +1,5 @@
 {
-  "latest": "0.1.4",
+  "latest": "0.1.5",
   "download_url": "https://dronefight.iydebu.com/#download",
-  "notes": "Internal alpha 5: DroneCity break-in windows (shoot or ram the glass, fly inside) and dash to dodge rockets. Menu now shows SAVED notes when you change settings, plus a GAMEPAD NOT WORKING? help card."
+  "notes": "Internal alpha 6: a city skyline now surrounds DroneCity, the arena wall is a calmer cyan that turns orange and pulses only while the arena shrinks, and bots fight down in the streets."
 }
