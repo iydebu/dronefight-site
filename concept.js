@@ -38,7 +38,7 @@ if (phone()) panels.forEach(d => d.removeAttribute('open'));
 panels.forEach(d => d.querySelector('summary').addEventListener('click', e => { if (!phone()) e.preventDefault(); }));
 addEventListener('resize', () => { if (!phone()) panels.forEach(d => (d.open = true)); });
 
-/* ---- request the alpha: no public download, the request goes to Debu (iydebu.com function -> Discord), he emails the build ---- */
+/* ---- request the alpha: no public download, the request goes to Debu (iydebu.com function -> Discord), he shares the Google Drive build folder ---- */
 const ASK_API = /^(127\.0\.0\.1|localhost)$/.test(location.hostname) ? 'http://127.0.0.1:8092/api/access' : 'https://iydebu.com/api/access'; // local check -> portfolio serve-dist
 const ASK_MAIL = 'iydebu.io@gmail.com';
 $('#ask')?.addEventListener('submit', async e => {
@@ -55,7 +55,7 @@ $('#ask')?.addEventListener('submit', async e => {
     const r = await fetch(ASK_API, { method: 'POST', headers: { 'content-type': 'text/plain' }, body: JSON.stringify({ game: 'dronefight',
       name: v('name'), email: v('email'), note: v('note'), device: navigator.platform || '', 'bot-field': v('bot-field') }) });
     if (!r.ok) throw 0;
-    f.classList.add('sent'); say('Thank you. I will email the alpha to <b>' + v('email').replace(/[<>&"]/g, '') + '</b> soon. Check your spam folder too.', 'ok');
+    f.classList.add('sent'); say('Thank you. I will share the build folder on Google Drive with <b>' + v('email').replace(/[<>&"]/g, '') + '</b> soon. Google will email you the link.', 'ok');
   } catch {
     btn.disabled = false;
     say('Could not send right now. Please email me at <a href="mailto:' + ASK_MAIL + '?subject=DroneFight%20alpha">' + ASK_MAIL + '</a>.', 'err');
