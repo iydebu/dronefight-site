@@ -5,12 +5,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>DroneFight · Small drones. Loud rounds.</title>
-<meta name="description" content="DroneFight is a fast drone arena fighter, early alpha out now for Windows. Small drones, tight neon arenas, one timer. Grab powerups, chase kills and steal the round in the last seconds.">
+<meta name="description" content="DroneFight is a fast drone arena fighter. The early alpha for Windows is out: ask for a copy. Small drones, tight neon arenas, one timer. Grab powerups, chase kills and steal the round in the last seconds.">
 <meta name="theme-color" content="#07080a">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="DroneFight">
 <meta property="og:title" content="DroneFight · Small drones. Loud rounds.">
-<meta property="og:description" content="A fast drone arena fighter. Early alpha out now for Windows. Grab powerups, chase kills, steal the round in the last seconds.">
+<meta property="og:description" content="A fast drone arena fighter. Early Windows alpha out now: ask for a copy. Grab powerups, chase kills, steal the round in the last seconds.">
 <meta property="og:url" content="https://dronefight.iydebu.com/">
 <meta property="og:image" content="https://dronefight.iydebu.com/og.png">
 <meta property="og:image:width" content="1200">
@@ -32,7 +32,7 @@
 <header id="bar">
   <a class="logo" href="#top"><span class="mark"></span>DRONEFIGHT</a>
   <nav>
-    <a href="#feel">Feel</a><a href="#arsenal">Arsenal</a><a href="#alpha">Alpha test</a><a href="#safe">Is it safe?</a><a href="#download">Download</a>
+    <a href="#feel">Feel</a><a href="#arsenal">Arsenal</a><a href="#alpha">Alpha test</a><a href="#safe">Is it safe?</a><a href="#download">Get the alpha</a>
   </nav>
   <button id="snd" type="button" aria-pressed="false">Sound <b>off</b></button>
 </header>
@@ -43,7 +43,7 @@
     <h1 id="title" aria-label="DroneFight">DRONEFIGHT</h1>
     <p class="pitch reveal">Small, fast drones. Tight neon arenas. One timer. <br>Grab powerups, chase kills, and steal the round with a last-second play.</p>
     <div class="cta reveal">
-      <a class="btn" href="#download">Download alpha</a>
+      <a class="btn" href="#download">Get the alpha</a>
       <a class="btn ghost" href="#safe">Is it safe?</a>
     </div>
     <div class="scroll reveal" aria-hidden="true"><i></i>Scroll</div>
@@ -124,7 +124,7 @@
       <div class="panel reveal">
         <h3>Start the game</h3>
         <ol class="howto">
-          <li>Download the zip from the button below. It comes from the official GitHub release. If your browser says the file <q>is not commonly downloaded</q>, choose <b>Keep</b>. New files get that note until many people have them.</li>
+          <li>Ask for the alpha with the form below. I email you a zip. If your browser says the file <q>is not commonly downloaded</q>, choose <b>Keep</b>. New files get that note until many people have them.</li>
           <li>Right-click the zip, then click <b>Extract All</b>.</li>
           <li>Open the folder and run <b>DroneFight.exe</b>.</li>
           <li>If the blue Windows box shows, click <b>More info</b>, then <b>Run anyway</b>.</li>
@@ -143,25 +143,24 @@
           <li><b>No installer.</b> No admin rights needed. To remove it, delete the folder.</li>
           <li><b>Keeps to its folder.</b> Settings, logs and saved bug reports go into the game's own Saved folder.</li>
           <li><b>Goes online only to</b> check for updates (this website), play online matches (Steam), and send a bug report when you press SEND.</li>
-          <li><b>Big download, normal reason.</b> It is an Unreal Engine 5 game. Most of the 424 MB is the engine and the art.</li>
+          <li><b>Big download, normal reason.</b> It is an Unreal Engine 5 game. Most of the size is the engine and the art.</li>
         </ul>
-      </details>
-      <details class="panel reveal" open>
-        <summary><h3>Check the file yourself</h3></summary>
-        <p>The SHA-256 fingerprint of the zip. If it matches, the file is exactly the one I uploaded.</p>
-        <div class="hash"><code id="sha">b49797d22af0a29e83d71380935b38fafaaf80090fea267fc0e8f259c717908b</code><button type="button" id="copySha">Copy</button></div>
-        <p class="small">Windows: open PowerShell in the folder and run <code>Get-FileHash DroneFight_Alpha_0.1.5_Win64.zip</code></p>
-        <p class="vt"><span><b>VirusTotal 0 / 61:</b> no antivirus engine flagged it at upload.</span></p>
-        <div class="links"><a href="https://www.virustotal.com/gui/file/b49797d22af0a29e83d71380935b38fafaaf80090fea267fc0e8f259c717908b" target="_blank" rel="noopener">VirusTotal report</a><a href="https://github.com/iydebu/dronefight-site/releases/tag/v0.1.5" target="_blank" rel="noopener">GitHub release page</a></div>
       </details>
     </div>
   </section>
 
   <footer id="download" class="end" data-drone="hi" data-move="dive">
     <h2 class="reveal">Alpha<br>is out.</h2>
-    <p class="reveal">Early alpha 0.1.5 for Windows 10/11 (64-bit), 424 MB. Unzip, run DroneFight.exe, fly. Expect bugs: press F8 in the game to report one.</p>
+    <p class="reveal">Early alpha 0.1.5 for Windows 10/11 (64-bit). It is not a public download. Tell me who you are and I will email you the build. Expect bugs: press F8 in the game to report one.</p>
+    <form id="ask" class="ask reveal" novalidate>
+      <label>Your name<input name="name" autocomplete="name" maxlength="80" required></label>
+      <label>Your email<input name="email" type="email" autocomplete="email" maxlength="120" required></label>
+      <label><span>Anything to add? <i>(optional)</i></span><textarea name="note" rows="3" maxlength="500" placeholder="For example: I play with a gamepad"></textarea></label>
+      <input class="hp" name="bot-field" tabindex="-1" autocomplete="off" aria-hidden="true">
+      <button class="btn" type="submit">Request the alpha</button>
+      <p class="ask-msg" role="status" aria-live="polite"></p>
+    </form>
     <div class="cta reveal">
-      <a class="btn" href="https://github.com/iydebu/dronefight-site/releases/download/v0.1.5/DroneFight_Alpha_0.1.5_Win64.zip">Download alpha 0.1.5</a>
       <a class="btn ghost" href="#safe">Is it safe?</a>
       <a class="btn ghost" href="https://x.com/iydebu" target="_blank" rel="noopener">Follow on X</a>
       <a class="btn ghost" href="https://www.youtube.com/@iydebu" target="_blank" rel="noopener">YouTube</a>

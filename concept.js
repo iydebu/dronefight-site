@@ -38,12 +38,28 @@ if (phone()) panels.forEach(d => d.removeAttribute('open'));
 panels.forEach(d => d.querySelector('summary').addEventListener('click', e => { if (!phone()) e.preventDefault(); }));
 addEventListener('resize', () => { if (!phone()) panels.forEach(d => (d.open = true)); });
 
-/* ---- copy the SHA-256 ---- */
-$('#copySha')?.addEventListener('click', async e => {
-  const b = e.currentTarget, t = $('#sha').textContent.trim();
-  try { await navigator.clipboard.writeText(t); b.textContent = 'Copied'; }
-  catch { const r = document.createRange(); r.selectNodeContents($('#sha')); getSelection().removeAllRanges(); getSelection().addRange(r); b.textContent = 'Select'; }
-  setTimeout(() => (b.textContent = 'Copy'), 1600);
+/* ---- request the alpha: no public download, the request goes to Debu (iydebu.com function -> Discord), he emails the build ---- */
+const ASK_API = /^(127\.0\.0\.1|localhost)$/.test(location.hostname) ? 'http://127.0.0.1:8092/api/access' : 'https://iydebu.com/api/access'; // local check -> portfolio serve-dist
+const ASK_MAIL = 'iydebu.io@gmail.com';
+$('#ask')?.addEventListener('submit', async e => {
+  e.preventDefault();
+  const f = e.currentTarget, btn = f.querySelector('button'), msg = f.querySelector('.ask-msg');
+  const v = n => f.elements[n].value.trim();
+  const say = (t, cls) => { msg.className = 'ask-msg ' + (cls || ''); msg.innerHTML = t; };
+  f.elements.name.setAttribute('aria-invalid', !v('name'));
+  f.elements.email.setAttribute('aria-invalid', !/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(v('email')));
+  if (!v('name')) return say('Please write your name.', 'err'), f.elements.name.focus();
+  if (f.elements.email.getAttribute('aria-invalid') === 'true') return say('Please check your email address.', 'err'), f.elements.email.focus();
+  btn.disabled = true; say('Sending...');
+  try {
+    const r = await fetch(ASK_API, { method: 'POST', headers: { 'content-type': 'text/plain' }, body: JSON.stringify({ game: 'dronefight',
+      name: v('name'), email: v('email'), note: v('note'), device: navigator.platform || '', 'bot-field': v('bot-field') }) });
+    if (!r.ok) throw 0;
+    f.classList.add('sent'); say('Thank you. I will email the alpha to <b>' + v('email').replace(/[<>&"]/g, '') + '</b> soon. Check your spam folder too.', 'ok');
+  } catch {
+    btn.disabled = false;
+    say('Could not send right now. Please email me at <a href="mailto:' + ASK_MAIL + '?subject=DroneFight%20alpha">' + ASK_MAIL + '</a>.', 'err');
+  }
 });
 
 /* ---- where the drone sits for each section ---- */
