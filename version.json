@@ -1,5 +1,5 @@
 {
-  "latest": "0.1.10",
+  "latest": "0.1.11",
   "download_url": "https://drive.google.com/drive/folders/1RehrdF_joVoPn8xvSvExjJAurIzdDFDi",
-  "notes": "Alpha 10: online rounds end back in the room, smoother enemy drones, rockets leave at your click, lag-free wreck steering, and a ping line in Settings."
+  "notes": "Alpha 11: fixes online play on PCs where the game said 'Steam is open, restart the game' forever. The Steam screen now says what went wrong."
 }
